@@ -1,115 +1,164 @@
-# Smart Factory Energy Prediction Challenge
+# Smart Factory Energy Prediction Pipeline
 
-## Problem Overview
+## Overview
+This pipeline predicts equipment energy consumption in a smart factory environment using machine learning. It leverages XGBoost regression and advanced feature engineering techniques to create accurate energy consumption forecasts based on environmental conditions, time patterns, and historical data.
 
-You've been hired as a data scientist for SmartManufacture Inc., a leading industrial automation company. The company has deployed an extensive sensor network throughout one of their client's manufacturing facilities to monitor environmental conditions and energy usage.
+## Table of Contents
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Pipeline Workflow](#pipeline-workflow)
+- [Features](#features)
+- [Model Performance](#model-performance)
+- [Output Artifacts](#output-artifacts)
+- [Customization](#customization)
+- [Troubleshooting](#troubleshooting)
 
-The client is concerned about the increasing energy costs associated with their manufacturing equipment. They want to implement a predictive system that can forecast equipment energy consumption based on various environmental factors and sensor readings from different zones of the factory.
+## Requirements
+- Python 3.7+
+- pandas
+- numpy
+- scikit-learn
+- xgboost
+- optuna
+- shap
+- matplotlib
+- seaborn
+- joblib
 
-## Your Task
+## Installation
+Install required packages:
 
-Your assignment is to develop a machine learning model that can accurately predict the energy consumption of industrial equipment (`equipment_energy_consumption`) based on the data collected from the factory's sensor network. This will help the facility managers optimize their operations for energy efficiency and cost reduction.
-
-### Specific Goals:
-
-1. Analyze the provided sensor data to identify patterns and relationships between environmental factors and equipment energy consumption
-2. Build a robust regression model to predict equipment energy consumption
-3. Evaluate the model's performance using appropriate metrics
-4. Provide actionable insights and recommendations for reducing energy consumption
-
-## Repository Structure
-
-This repository is organized as follows:
-
+```bash
+pip install pandas numpy scikit-learn xgboost optuna shap matplotlib seaborn joblib
 ```
-.
-├── data/               # Contains the training and test datasets
-│   ├── data.csv        # dataset
-├── docs/               # Documentation files
-│   └── data_description.md  # Detailed description of all features
-└── README.md           # This file
-```
 
-## Dataset Description
+## Usage
+1. Prepare your dataset in CSV format with a timestamp column and equipment energy consumption data.
+2. Update the file path in the script:
+   ```python
+   file_path = "path/to/your/data.csv"
+   ```
+3. Run the pipeline:
+   ```python
+   python energy_prediction_pipeline.py
+   ```
 
-The data comes from a manufacturing facility equipped with multiple sensors that collect environmental measurements. Each record contains:
+## Pipeline Workflow
+The pipeline consists of the following steps:
 
-- Timestamp of the measurement
-- Energy consumption readings for equipment and lighting
-- Temperature and humidity readings from 9 different zones in the facility
-- Outdoor weather conditions (temperature, humidity, pressure, etc.)
-- Additional measurements and calculated variables
+1. **Data Loading & Preprocessing**
+   - Parses timestamps
+   - Converts string columns to numeric
+   - Handles missing values
+   - Reports data quality issues
 
-### Notes on Feature Selection and Random Variables
+2. **Feature Engineering**
+   - Creates time-based features (hour, day of week, seasonal indicators)
+   - Generates zone temperature and humidity statistics
+   - Calculates temperature differences between zones
+   - Creates energy consumption lag features
+   - Incorporates rolling window statistics
+   - Adds feature interactions
 
-The dataset includes two variables named `random_variable1` and `random_variable2`. Part of your task is to determine, through proper data analysis and feature selection techniques, whether these variables should be included in your model or not. This mimics real-world scenarios where not all available data is necessarily useful for prediction.
+3. **Target Transformation**
+   - Log-transforms energy consumption for better model performance
+   - Removes invalid or extreme energy values
 
-Your approach to handling these variables should be clearly documented and justified in your analysis. This will be an important part of evaluating your feature selection methodology.
+4. **Feature Selection**
+   - Removes low-variance features
+   - Uses XGBoost importance to select most relevant features
 
-Note that your final solution will also be evaluated on a separate holdout dataset that we maintain privately, which serves as an additional check on your model's generalization capability.
+5. **Dimensionality Reduction**
+   - Applies PCA to zone-related features
+   - Reduces multicollinearity
 
-For a detailed description of all features, please refer to the [data description document](docs/data_description.md).
+6. **Hyperparameter Optimization**
+   - Uses Optuna for Bayesian optimization of XGBoost parameters
+   - Implements time series cross-validation
 
-## Deliverables
+7. **Model Training**
+   - Trains XGBoost with optimal parameters
+   - Includes fallback mechanisms for training errors
 
-Your submission should include:
+8. **Model Evaluation**
+   - Calculates RMSE, MAE, R² in both original and log scales
+   - Reports MAPE and median errors
+   - Generates visualization of actual vs. predicted values
 
-1. **A well-documented Jupyter notebook** containing:
-   - Exploratory data analysis (EDA)
-   - Data preprocessing steps
-   - Feature engineering and selection
-   - Model development and training
-   - Model evaluation and testing
-   - Key findings and insights
+9. **Model Explainability**
+   - Uses SHAP values to explain predictions
+   - Creates feature importance visualizations
 
-2. **Python script(s)/notebook(s)** with your final model implementation
+10. **Artifact Storage**
+    - Saves trained model
+    - Stores preprocessing components (scaler, feature selector)
+    - Preserves visualization outputs
 
-3. **A brief report (PDF or Markdown format)** summarizing:
-   - Your approach to the problem
-   - Key insights from the data
-   - Model performance evaluation
-   - Recommendations for reducing equipment energy consumption
+## Features
+- **Robust Preprocessing**: Handles missing values and outliers
+- **Comprehensive Feature Engineering**: Time-based, zone-based, and interaction features
+- **Advanced Model Selection**: Hyperparameter optimization with time series validation
+- **Explainable AI**: SHAP analysis for transparency in predictions
+- **Error Handling**: Fallback mechanisms for training failures
+- **Visual Analysis**: Multiple visualization outputs for model evaluation
 
-## Evaluation Criteria
+## Model Performance
+The pipeline outputs several performance metrics:
 
-Your solution will be evaluated based on:
+- **RMSE**: Root Mean Square Error (original and log scale)
+- **MAE**: Mean Absolute Error (original and log scale)
+- **R²**: Coefficient of determination (original and log scale)
+- **MAPE**: Mean Absolute Percentage Error
+- **Median Error**: Median of absolute errors
 
-1. **Code Quality and Structure (25%)**
-   - Clean, well-organized, and properly documented code
-   - Appropriate use of functions and classes
-   - Effective use of Git with meaningful commit messages
-   - Code readability and adherence to Python conventions
+## Output Artifacts
+The pipeline saves the following artifacts:
 
-2. **Data Analysis and Preprocessing (25%)**
-   - Thoroughness of exploratory data analysis
-   - Handling of missing values, outliers, and data transformations
-   - Feature engineering creativity and effectiveness
-   - Proper data splitting methodology
+- `energy_prediction_model.joblib`: Trained XGBoost model
+- `scaler.joblib`: Feature scaler
+- `feature_selector.joblib`: Feature selection model
+- `variance_selector.joblib`: Variance threshold selector
+- `pca_model.joblib`: PCA model (if applicable)
+- `feature_importance.png`: Feature importance visualization
+- `shap_summary.png`: SHAP summary plot
+- `actual_vs_predicted.png`: Visualization of predictions vs. actual values
 
-3. **Model Development (25%)**
-   - Selection and justification of algorithms
-   - Hyperparameter tuning approach
-   - Implementation of cross-validation
-   - Model interpretability considerations
+## Customization
+You can customize the pipeline by modifying these parameters:
 
-4. **Results and Insights (25%)**
-   - Model performance metrics (RMSE, MAE, R²) on both the test dataset and our private holdout dataset
-   - Quality of visualizations and explanations
-   - Practical insights and recommendations
-   - Critical evaluation of model limitations
+- **Feature Engineering**: Add or remove engineered features in the `engineer_features` function
+- **Feature Selection**: Adjust variance and importance thresholds in `select_features`
+- **PCA Components**: Change `n_components` in `apply_pca_to_zones`
+- **Hyperparameter Search**: Modify `n_trials` or parameter ranges in `optimize_hyperparameters`
+- **Train/Test Split**: Change the test size ratio in the `main` function
 
-## Submission Instructions
+## Troubleshooting
 
-1. Fork this repository to your own GitHub account, naming it `DS-Intern-Assignment-[YourName]` (replace `[YourName]` with your actual name)
-2. Clone your forked repository to your local machine
-3. Make regular, meaningful commits as you develop your solution
-4. Push your changes to your forked repository
-5. Once complete, submit the URL of your forked repository via replying to the mail.
+### Common Issues
 
-Your commit history will be reviewed as part of the evaluation, so make sure to commit regularly and include meaningful commit messages that reflect your development process.
+1. **NaN or Infinite Values**
+   - The pipeline has built-in checks for NaN/infinite values
+   - Check your data preprocessing if errors persist
 
-## Time Commitment
+2. **Memory Issues**
+   - For large datasets, reduce the number of engineered features
+   - Consider sampling data for hyperparameter optimization
 
-This assignment is designed to be completed in approximately 4-6 hours.
+3. **Training Errors**
+   - The pipeline includes fallback parameters if optimal ones fail
+   - Check log for specific error messages
 
-Good luck!
+4. **Poor Performance**
+   - Try increasing `n_trials` for hyperparameter optimization
+   - Add more domain-specific features to the feature engineering step
+   - Consider different time windows for lag features
+
+5. **Execution Time**
+   - Reduce `n_trials` for faster hyperparameter search
+   - Use a smaller subset of data for development
+
+### Debugging Tips
+- Set `warnings.filterwarnings("default")` to see warnings
+- Add print statements to track progress through large datasets
+- Check feature distributions before and after transformations
