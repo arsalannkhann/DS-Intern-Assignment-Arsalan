@@ -41,7 +41,7 @@ pip install pandas numpy scikit-learn xgboost optuna shap matplotlib seaborn job
    ```
 3. Run the pipeline:
    ```python
-   python energy_prediction_pipeline.py
+   main.py
    ```
 
 ## Pipeline Workflow
